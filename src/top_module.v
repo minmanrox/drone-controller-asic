@@ -49,12 +49,6 @@ module top_module (
     mixer mx (.throttle(throttle), .yaw(yaw), .pitch(pitch), .roll(roll),
               .motor1(m1), .motor2(m2), .motor3(m3), .motor4(m4));
     
-    // Filter to smooth controls
-    // movingAverageFilter #( .N(5)) F1 (.clk(clk), .unfiltered(m1), .filtered(f1));
-    // movingAverageFilter #( .N(5)) F2 (.clk(clk), .unfiltered(m2), .filtered(f2));
-    // movingAverageFilter #( .N(5)) F3 (.clk(clk), .unfiltered(m3), .filtered(f3));
-    // movingAverageFilter #( .N(5)) F4 (.clk(clk), .unfiltered(m4), .filtered(f4));
-
     // Convert binary numbers to PWM signals
     mix_to_pwm e1 (.clk(clk), .motor_value(m1), .pwm_out(pwm_out1), .arm(arm_bit), .reset_cal(debounced_calib_reset), .calibration_complete(calib_state1));
     mix_to_pwm e2 (.clk(clk), .motor_value(m2), .pwm_out(pwm_out2), .arm(arm_bit), .reset_cal(debounced_calib_reset), .calibration_complete(calib_state2));
