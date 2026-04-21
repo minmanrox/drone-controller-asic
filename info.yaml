@@ -22,7 +22,6 @@ project:
     - "debounce.v"
     - "mixer.v"
     - "mix_to_pwm.v"
-    - "project.v"
     - "pwm_to_mix.v"
     - "system_params.vh"
 
