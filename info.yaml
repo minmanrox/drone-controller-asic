@@ -19,7 +19,6 @@ project:
   source_files:
     - "tt_um_minmanrox_drone.v"
     - "top_module.v"
-    - "debounce.v"
     - "mixer.v"
     - "mix_to_pwm.v"
     - "pwm_to_mix.v"
@@ -35,7 +34,7 @@ pinout:
   ui[3]: "Pitch PWM in"
   ui[4]: "Roll PWM in"
   ui[5]: "Arm PWM in"
-  ui[6]: "Calibration Reset Button"
+  ui[6]: ""
   ui[7]: ""
 
   # Outputs
@@ -43,7 +42,7 @@ pinout:
   uo[1]: "Motor 2 (FR,  CW) PWM out"
   uo[2]: "Motor 3 (RR, CCW) PWM out"
   uo[3]: "Motor 4 (RL,  CW) PWM out"
-  uo[4]: "Calibration Complete LED"
+  uo[4]: ""
   uo[5]: "Armed LED"
   uo[6]: ""
   uo[7]: ""

@@ -18,9 +18,8 @@ module top_module (
     input clk,
     input pwm_in1, pwm_in2, pwm_in3, pwm_in4,
     input arm_in,
-    input calib_reset_button,
     output pwm_out1, pwm_out2, pwm_out3, pwm_out4,
-    output calibration_led, arm_led
+    output arm_led
 );
     wire [7:0] throttle, yaw, pitch, roll;
     wire signed [9:0] m1, m2, m3, m4;
@@ -29,14 +28,6 @@ module top_module (
     wire arm_bit;
     assign arm_bit = arm_lvl[7];
     assign arm_led = arm_bit;
-    
-    // debounce calib_reset_button
-    wire debounced_calib_reset;
-    debounce d1 (.clk(clk), .pb_1(calib_reset_button), .pb_out(debounced_calib_reset));
-    
-    // Assign LED when all ESCs are calibrated
-    wire calib_state1, calib_state2, calib_state3, calib_state4;
-    assign calibration_led = calib_state1 && calib_state2 && calib_state3 && calib_state4;
 
     // Convert PWM inputs to binary numbers 
     pwm_to_mix r1 (.clk(clk), .pwm_in(pwm_in1), .value(throttle));
@@ -50,8 +41,8 @@ module top_module (
               .motor1(m1), .motor2(m2), .motor3(m3), .motor4(m4));
     
     // Convert binary numbers to PWM signals
-    mix_to_pwm e1 (.clk(clk), .motor_value(m1), .pwm_out(pwm_out1), .arm(arm_bit), .reset_cal(debounced_calib_reset), .calibration_complete(calib_state1));
-    mix_to_pwm e2 (.clk(clk), .motor_value(m2), .pwm_out(pwm_out2), .arm(arm_bit), .reset_cal(debounced_calib_reset), .calibration_complete(calib_state2));
-    mix_to_pwm e3 (.clk(clk), .motor_value(m3), .pwm_out(pwm_out3), .arm(arm_bit), .reset_cal(debounced_calib_reset), .calibration_complete(calib_state3));
-    mix_to_pwm e4 (.clk(clk), .motor_value(m4), .pwm_out(pwm_out4), .arm(arm_bit), .reset_cal(debounced_calib_reset), .calibration_complete(calib_state4));
+    mix_to_pwm e1 (.clk(clk), .motor_value(m1), .pwm_out(pwm_out1), .arm(arm_bit));
+    mix_to_pwm e2 (.clk(clk), .motor_value(m2), .pwm_out(pwm_out2), .arm(arm_bit));
+    mix_to_pwm e3 (.clk(clk), .motor_value(m3), .pwm_out(pwm_out3), .arm(arm_bit));
+    mix_to_pwm e4 (.clk(clk), .motor_value(m4), .pwm_out(pwm_out4), .arm(arm_bit));
 endmodule
