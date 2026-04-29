@@ -57,9 +57,9 @@ async def test_project(dut):
 async def setup_dut(dut):
     dut.ena.value = 1
     dut.rst_n.value = 0
-    await ClockCycles(dut.clk, 10)
+    await ClockCycles(dut.clk, 100)
     dut.rst_n.value = 1
-    await ClockCycles(dut.clk, 10)
+    await ClockCycles(dut.clk, 100)
 
 
 async def measure_pwm_duty(dut, cycles: int) -> dict[int, float]:
