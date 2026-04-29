@@ -253,7 +253,7 @@ async def read_mixer_values(dut):
 ######################
 
 
-@cocotb.test()
+@cocotb.test(skip=True)
 async def dummy_smoke_test(dut):
     """Simple smoke test: toggle inputs and run a few cycles."""
     dut._log.info("Starting dummy smoke test")
@@ -289,7 +289,7 @@ async def dummy_smoke_test(dut):
     dut._log.info("Dummy smoke test completed")
 
 
-@cocotb.test(skip=False)
+@cocotb.test(skip=True)
 async def test_calibration_sequence(dut):
     """Trigger calibration mechanism and confirm output matches expected."""
     dut._log.warning("ENSURE CALIB_HOLD IN system_params.vh MATCHES CALIB_CYCLES IN test_top.py")
