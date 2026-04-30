@@ -6,11 +6,11 @@ from cocotb.clock import Clock
 from cocotb.triggers import ClockCycles, RisingEdge, FallingEdge, Timer, Lock
 from cocotb.utils import get_sim_time
 
-CLK_PERIOD_NS = 40  # 25 MHz
-PERIOD_CYCLES = 500_000  # 20 ms @ 25 MHz
-HIGH_CYCLES_MAX = 50_000
+CLK_PERIOD_NS = 320  # 3.125MHz
+PERIOD_CYCLES = 62_500  # 20 ms @ 3.125MHz
+HIGH_CYCLES_MAX = 6_250
 LOW_CYCLES_MAX  = PERIOD_CYCLES - HIGH_CYCLES_MAX
-HIGH_CYCLES_MIN = 25_000
+HIGH_CYCLES_MIN = 3_125
 LOW_CYCLES_MIN  = PERIOD_CYCLES - HIGH_CYCLES_MIN
 
 
@@ -273,19 +273,13 @@ async def test_arm_gates_throttle(dut):
     # Let DUT settle
     await Timer(2, unit="ms")
 
-    # Define max and min throttle input PWM
-    high_cycles_max = 50_000
-    low_cycles_max  = PERIOD_CYCLES - high_cycles_max
-    high_cycles_min = 25_000
-    low_cycles_min  = PERIOD_CYCLES - high_cycles_min
-
     # Phase 1: arm=0, drive max throttle, output should remain effectively off
     dut._log.info("Phase 1: arm=0, throttle=max")
 
     # drive throttle and arm (for min) simultaneously
     pwm_cfgs = {
-        1: (high_cycles_max, low_cycles_max), # pwm_in1
-        5: (high_cycles_min, low_cycles_min), # arm
+        1: (HIGH_CYCLES_MAX, LOW_CYCLES_MAX), # pwm_in1
+        5: (HIGH_CYCLES_MIN, LOW_CYCLES_MIN), # arm
     }
     await drive_multiple_pwms(dut.clk, dut.ui_in, pwm_cfgs, 1)
     assert(dut.uo_out.value[5] == 0) # arm_led
@@ -303,8 +297,8 @@ async def test_arm_gates_throttle(dut):
 
     # drive throttle and arm (for max) simultaneously
     pwm_cfgs = {
-        1: (high_cycles_max, low_cycles_max), # pwm_in1
-        5: (high_cycles_max, low_cycles_max), # arm
+        1: (HIGH_CYCLES_MAX, LOW_CYCLES_MAX), # pwm_in1
+        5: (HIGH_CYCLES_MAX, LOW_CYCLES_MAX), # arm
     }
     await drive_multiple_pwms(dut.clk, dut.ui_in, pwm_cfgs, 1)
     assert(dut.uo_out.value[5] == 1) # arm_led

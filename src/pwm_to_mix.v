@@ -45,9 +45,9 @@ module pwm_to_mix(
         // shift to 0
         pw_shifted <= (pulse_width > `PWM_MIN)
                         ? (pulse_width - `PWM_MIN)
-                        : 20'd0;
+                        : 0;
 
         // extract top 8 bits to avoid costly multiplication/division
-        value <= pw_shifted[14:7];
+        value <= pw_shifted[11:4];
     end
 endmodule
