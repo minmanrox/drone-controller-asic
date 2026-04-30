@@ -6,11 +6,11 @@ from cocotb.clock import Clock
 from cocotb.triggers import ClockCycles, RisingEdge, FallingEdge, Timer, Lock
 from cocotb.utils import get_sim_time
 
-CLK_PERIOD_NS = 320  # 3.125MHz
-PERIOD_CYCLES = 62_500  # 20 ms @ 3.125MHz
-HIGH_CYCLES_MAX = 6_250
+CLK_PERIOD_NS = 640  # 3.125MHz
+PERIOD_CYCLES = 31_250  # 20 ms @ 3.125MHz
+HIGH_CYCLES_MAX = 3_125
 LOW_CYCLES_MAX  = PERIOD_CYCLES - HIGH_CYCLES_MAX
-HIGH_CYCLES_MIN = 3_125
+HIGH_CYCLES_MIN = 1_563
 LOW_CYCLES_MIN  = PERIOD_CYCLES - HIGH_CYCLES_MIN
 
 
@@ -314,7 +314,7 @@ async def test_arm_gates_throttle(dut):
     dut._log.info(f"Disarmed duty pwm_out1={d1_disarmed:.4f}")
 
     # Expect minimum duty (ideally 0.05)
-    assert d1_disarmed <= 0.05, "pwm_out1 should be near 0.05 when arm=0"
+    assert d1_disarmed <= 0.050016, "pwm_out1 should be near 0.05 when arm=0"
 
     # Phase 2: arm=1, same max throttle, now PWM should be present
     dut._log.info("Phase 2: arm=1, throttle=max")

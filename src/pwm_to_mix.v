@@ -56,7 +56,7 @@ module pwm_to_mix(
                             : 0;
 
             // extract top 8 bits to avoid costly multiplication/division
-            value <= pw_shifted[11:4];
+            value <= pw_shifted[10:3];
         end
     end
 endmodule
