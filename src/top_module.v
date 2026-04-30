@@ -16,6 +16,7 @@
 
 module top_module (
     input clk,
+    input rst_n,
     input pwm_in1, pwm_in2, pwm_in3, pwm_in4,
     input arm_in,
     input calib_reset_button,
@@ -32,26 +33,26 @@ module top_module (
     
     // debounce calib_reset_button
     wire debounced_calib_reset;
-    debounce d1 (.clk(clk), .pb_1(calib_reset_button), .pb_out(debounced_calib_reset));
+    debounce d1 (.clk(clk), .rst_n(rst_n), .pb_1(calib_reset_button), .pb_out(debounced_calib_reset));
     
     // Assign LED when all ESCs are calibrated
     wire calib_state1, calib_state2, calib_state3, calib_state4;
     assign calibration_led = calib_state1 && calib_state2 && calib_state3 && calib_state4;
 
     // Convert PWM inputs to binary numbers 
-    pwm_to_mix r1 (.clk(clk), .pwm_in(pwm_in1), .value(throttle));
-    pwm_to_mix r2 (.clk(clk), .pwm_in(pwm_in2), .value(yaw));
-    pwm_to_mix r3 (.clk(clk), .pwm_in(pwm_in3), .value(pitch));
-    pwm_to_mix r4 (.clk(clk), .pwm_in(pwm_in4), .value(roll));
-    pwm_to_mix r5 (.clk(clk), .pwm_in(arm_in),  .value(arm_lvl));
+    pwm_to_mix r1 (.clk(clk), .pwm_in(pwm_in1), .value(throttle), .rst_n(rst_n));
+    pwm_to_mix r2 (.clk(clk), .pwm_in(pwm_in2), .value(yaw), .rst_n(rst_n));
+    pwm_to_mix r3 (.clk(clk), .pwm_in(pwm_in3), .value(pitch), .rst_n(rst_n));
+    pwm_to_mix r4 (.clk(clk), .pwm_in(pwm_in4), .value(roll), .rst_n(rst_n));
+    pwm_to_mix r5 (.clk(clk), .pwm_in(arm_in),  .value(arm_lvl), .rst_n(rst_n));
 
     // Mix controls to motor binary numbers
     mixer mx (.throttle(throttle), .yaw(yaw), .pitch(pitch), .roll(roll),
               .motor1(m1), .motor2(m2), .motor3(m3), .motor4(m4));
     
     // Convert binary numbers to PWM signals
-    mix_to_pwm e1 (.clk(clk), .motor_value(m1), .pwm_out(pwm_out1), .arm(arm_bit), .reset_cal(debounced_calib_reset), .calibration_complete(calib_state1));
-    mix_to_pwm e2 (.clk(clk), .motor_value(m2), .pwm_out(pwm_out2), .arm(arm_bit), .reset_cal(debounced_calib_reset), .calibration_complete(calib_state2));
-    mix_to_pwm e3 (.clk(clk), .motor_value(m3), .pwm_out(pwm_out3), .arm(arm_bit), .reset_cal(debounced_calib_reset), .calibration_complete(calib_state3));
-    mix_to_pwm e4 (.clk(clk), .motor_value(m4), .pwm_out(pwm_out4), .arm(arm_bit), .reset_cal(debounced_calib_reset), .calibration_complete(calib_state4));
+    mix_to_pwm e1 (.clk(clk), .motor_value(m1), .pwm_out(pwm_out1), .arm(arm_bit), .reset_cal(debounced_calib_reset), .calibration_complete(calib_state1), .rst_n(rst_n));
+    mix_to_pwm e2 (.clk(clk), .motor_value(m2), .pwm_out(pwm_out2), .arm(arm_bit), .reset_cal(debounced_calib_reset), .calibration_complete(calib_state2), .rst_n(rst_n));
+    mix_to_pwm e3 (.clk(clk), .motor_value(m3), .pwm_out(pwm_out3), .arm(arm_bit), .reset_cal(debounced_calib_reset), .calibration_complete(calib_state3), .rst_n(rst_n));
+    mix_to_pwm e4 (.clk(clk), .motor_value(m4), .pwm_out(pwm_out4), .arm(arm_bit), .reset_cal(debounced_calib_reset), .calibration_complete(calib_state4), .rst_n(rst_n));
 endmodule

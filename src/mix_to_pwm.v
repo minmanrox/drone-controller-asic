@@ -17,6 +17,7 @@
 
 module mix_to_pwm (
     input clk,                    // 25 MHz
+    input rst_n,
     input signed [9:0] motor_value, // Mixer value (-293 to +489 by observation)
     input arm,
     input reset_cal,
@@ -24,9 +25,9 @@ module mix_to_pwm (
     output reg calibration_complete
 );
     localparam int MAX_PULSE_WIDTH = $clog2(`PWM_MAX + 1);
-    reg [$clog2(`PWM_PERIOD+1)-1:0] counter = 0;
-    reg [$clog2(`CALIB_HOLD + 1)-1:0] calibration_counter = 0;  // Counter for calibration timing
-    reg [1:0] calibration_state = 2'd2;     // FSM for calibration state 0=MIN, 1=MAX, 2=normal
+    reg [$clog2(`PWM_PERIOD+1)-1:0] counter;
+    reg [$clog2(`CALIB_HOLD + 1)-1:0] calibration_counter;  // Counter for calibration timing
+    reg [1:0] calibration_state;     // FSM for calibration state 0=MIN, 1=MAX, 2=normal
     
     // Calibration timing constants (for 125 MHz clock)
     localparam CAL_TIME = 30'd`CALIB_HOLD;
@@ -51,32 +52,45 @@ module mix_to_pwm (
     
     // Calibration state machine
     always @(posedge clk) begin
-        if (reset_cal == 1'b1) begin
+        if (~rst_n) begin
             calibration_counter <= 0;
-            calibration_state <= 0;
-        end
-        else if (calibration_state != 2'd2) begin
-            if (calibration_counter < CAL_TIME - 1) begin
-                calibration_counter <= calibration_counter + 1;
-            end else begin
+            calibration_state <= 2'd2;
+        end else begin
+            if (reset_cal == 1'b1) begin
                 calibration_counter <= 0;
-                calibration_state <= calibration_state + 1;
+                calibration_state <= 0;
+            end
+            else if (calibration_state != 2'd2) begin
+                if (calibration_counter < CAL_TIME - 1) begin
+                    calibration_counter <= calibration_counter + 1;
+                end else begin
+                    calibration_counter <= 0;
+                    calibration_state <= calibration_state + 1;
+                end
             end
         end
     end
     
     always @(posedge clk) begin
-        calibration_complete <= (calibration_state == 2'd2) ? 1'b1 : 1'b0;
+        if (~rst_n)
+            calibration_complete <= 1'b1;
+        else
+            calibration_complete <= (calibration_state == 2'd2) ? 1'b1 : 1'b0;
     end
 
     // Generate PWM by counting up to pulse_width
     always @(posedge clk) begin
-        if (counter < `PWM_PERIOD - 1)
-            counter <= counter + 1;
-        else
+        if (~rst_n) begin
             counter <= 0;
+            pwm_out <= 0;
+        end else begin
+            if (counter < `PWM_PERIOD - 1)
+                counter <= counter + 1;
+            else
+                counter <= 0;
 
-        pwm_out <= (counter < active_pulse_width);
+            pwm_out <= (counter < active_pulse_width);
+        end
     end
 
 endmodule
