@@ -16,6 +16,7 @@
 
 module top_module (
     input clk,
+    input rst_n,
     input pwm_in1, pwm_in2, pwm_in3, pwm_in4,
     input arm_in,
     output pwm_out1, pwm_out2, pwm_out3, pwm_out4,
@@ -30,19 +31,19 @@ module top_module (
     assign arm_led = arm_bit;
 
     // Convert PWM inputs to binary numbers 
-    pwm_to_mix r1 (.clk(clk), .pwm_in(pwm_in1), .value(throttle));
-    pwm_to_mix r2 (.clk(clk), .pwm_in(pwm_in2), .value(yaw));
-    pwm_to_mix r3 (.clk(clk), .pwm_in(pwm_in3), .value(pitch));
-    pwm_to_mix r4 (.clk(clk), .pwm_in(pwm_in4), .value(roll));
-    pwm_to_mix r5 (.clk(clk), .pwm_in(arm_in),  .value(arm_lvl));
+    pwm_to_mix r1 (.clk(clk), .pwm_in(pwm_in1), .value(throttle), .rst_n(rst_n));
+    pwm_to_mix r2 (.clk(clk), .pwm_in(pwm_in2), .value(yaw), .rst_n(rst_n));
+    pwm_to_mix r3 (.clk(clk), .pwm_in(pwm_in3), .value(pitch), .rst_n(rst_n));
+    pwm_to_mix r4 (.clk(clk), .pwm_in(pwm_in4), .value(roll), .rst_n(rst_n));
+    pwm_to_mix r5 (.clk(clk), .pwm_in(arm_in),  .value(arm_lvl), .rst_n(rst_n));
 
     // Mix controls to motor binary numbers
     mixer mx (.throttle(throttle), .yaw(yaw), .pitch(pitch), .roll(roll),
               .motor1(m1), .motor2(m2), .motor3(m3), .motor4(m4));
     
     // Convert binary numbers to PWM signals
-    mix_to_pwm e1 (.clk(clk), .motor_value(m1), .pwm_out(pwm_out1), .arm(arm_bit));
-    mix_to_pwm e2 (.clk(clk), .motor_value(m2), .pwm_out(pwm_out2), .arm(arm_bit));
-    mix_to_pwm e3 (.clk(clk), .motor_value(m3), .pwm_out(pwm_out3), .arm(arm_bit));
-    mix_to_pwm e4 (.clk(clk), .motor_value(m4), .pwm_out(pwm_out4), .arm(arm_bit));
+    mix_to_pwm e1 (.clk(clk), .motor_value(m1), .pwm_out(pwm_out1), .arm(arm_bit), .rst_n(rst_n));
+    mix_to_pwm e2 (.clk(clk), .motor_value(m2), .pwm_out(pwm_out2), .arm(arm_bit), .rst_n(rst_n));
+    mix_to_pwm e3 (.clk(clk), .motor_value(m3), .pwm_out(pwm_out3), .arm(arm_bit), .rst_n(rst_n));
+    mix_to_pwm e4 (.clk(clk), .motor_value(m4), .pwm_out(pwm_out4), .arm(arm_bit), .rst_n(rst_n));
 endmodule

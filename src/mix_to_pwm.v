@@ -14,12 +14,13 @@
 
 module mix_to_pwm (
     input clk,                    // 25 MHz
+    input rst_n,
     input signed [9:0] motor_value, // Mixer value (-293 to +489 by observation)
     input arm,
     output reg pwm_out
 );
     localparam int MAX_PULSE_WIDTH = $clog2(`PWM_MAX + 1);
-    reg [$clog2(`PWM_PERIOD+1)-1:0] counter = 0;
+    reg [$clog2(`PWM_PERIOD+1)-1:0] counter;
 
     // Use wire with assign for combinational logic
     wire [MAX_PULSE_WIDTH-1:0] pulse_width;
@@ -33,12 +34,17 @@ module mix_to_pwm (
 
     // Generate PWM by counting up to pulse_width
     always @(posedge clk) begin
-        if (counter < `PWM_PERIOD - 1)
-            counter <= counter + 1;
-        else
+        if (~rst_n) begin
             counter <= 0;
+            pwm_out <= 0;
+        end else begin
+            if (counter < `PWM_PERIOD - 1)
+                counter <= counter + 1;
+            else
+                counter <= 0;
 
-        pwm_out <= (counter < pulse_width);
+            pwm_out <= (counter < pulse_width);
+        end
     end
 
 endmodule

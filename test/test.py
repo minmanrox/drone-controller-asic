@@ -22,9 +22,9 @@ LOW_CYCLES_MIN  = PERIOD_CYCLES - HIGH_CYCLES_MIN
 async def setup_dut(dut):
     dut.ena.value = 1
     dut.rst_n.value = 0
-    await ClockCycles(dut.clk, 10)
+    await ClockCycles(dut.clk, 100)
     dut.rst_n.value = 1
-    await ClockCycles(dut.clk, 10)
+    await ClockCycles(dut.clk, 100)
 
 
 async def measure_pwm_duty(dut, cycles: int) -> dict[int, float]:
@@ -156,6 +156,7 @@ def set_input_values(
     )
 
     dut.ui_in.value = bitstring
+    dut.uio_in.value = "00000000"
 
 
 async def drive_controls(dut, throttle, pitch, roll, yaw, periods=1):
@@ -216,7 +217,7 @@ async def read_mixer_values(dut):
 ######################
 
 
-@cocotb.test()
+@cocotb.test(skip=False)
 async def dummy_smoke_test(dut):
     """Simple smoke test: toggle inputs and run a few cycles."""
     dut._log.info("Starting dummy smoke test")
@@ -245,9 +246,32 @@ async def dummy_smoke_test(dut):
     set_input_values(dut, arm_in=0)
 
     # Run for 100 clock cycles
-    for i in range(100):
+    # for i in range(100):
+    i = 0
+    success = True
+    while True:
         await RisingEdge(dut.clk)
-    dut._log.info(f"Cycle {i}: pwm_out1={int(dut.uo_out.value[0])}")
+        if dut.uo_out.value[0].is_resolvable:
+            dut._log.info(f"Cycle {i}: output: {dut.uo_out.value}")
+            break
+        i += 1
+        # if i > 10*PERIOD_CYCLES:
+        if i > 10000:
+            success = False
+            break
+
+    dut._log.info(dut.ui_in.value)
+    dut._log.info(dut.uo_out.value)
+    dut._log.info(dut.uio_in.value)
+    dut._log.info(dut.uio_out.value)
+    dut._log.info(dut.uio_oe.value)
+    dut._log.info(dut.ena.value)
+    dut._log.info(dut.clk.value)
+    dut._log.info(dut.rst_n.value)
+    # dut._log.info(dut.VPWR.value)
+    # dut._log.info(dut.VGND.value)
+
+    assert success
 
     dut._log.info("Dummy smoke test completed")
 

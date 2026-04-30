@@ -19,6 +19,7 @@ module tt_um_minmanrox_drone (
   // All output pins must be assigned. If not used, assign to 0.
   top_module controller (
     .clk(clk),
+    .rst_n(rst_n),
     .pwm_in1(ui_in[1]),
     .pwm_in2(ui_in[2]),
     .pwm_in3(ui_in[3]),
