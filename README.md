@@ -1,42 +1,30 @@
 ![](../../workflows/gds/badge.svg) ![](../../workflows/docs/badge.svg) ![](../../workflows/test/badge.svg) ![](../../workflows/fpga/badge.svg)
 
-# Tiny Tapeout Verilog Project Template
+## How it works
 
-- [Read the documentation for project](docs/info.md)
+This project implements a simple quadcopter drone flight controller that converts four control inputs (throttle, yaw, pitch, and roll) into power commands for four motors.
 
-## What is Tiny Tapeout?
+The controller mixes the inputs so that each motor receives a different drive level depending on the requested motion. Throttle raises or lowers all motors together, while yaw, pitch, and roll introduce differential adjustments to achieve the desired control.
 
-Tiny Tapeout is an educational project that aims to make it easier and cheaper than ever to get your digital and analog designs manufactured on a real chip.
+Both the input and output use a PWM signal with a 20 ms period. A 1 ms duty period represents the minimum value and a 2 ms duty period represents the maximum value.
 
-To learn more and get started, visit https://tinytapeout.com.
+## How to test
 
-## Set up your Verilog project
+Apply PWM control signals for throttle, yaw, pitch, and roll at the expected 20 ms frame rate and observe the four motor PWM outputs. Verify that increasing throttle raises all outputs together, and that yaw, pitch, and roll shift power between motors in the expected direction.
 
-1. Add your Verilog files to the `src` folder.
-2. Edit the [info.yaml](info.yaml) and update information about your project, paying special attention to the `source_files` and `top_module` properties. If you are upgrading an existing Tiny Tapeout project, check out our [online info.yaml migration tool](https://tinytapeout.github.io/tt-yaml-upgrade-tool/).
-3. Edit [docs/info.md](docs/info.md) and add a description of your project.
-4. Adapt the testbench to your design. See [test/README.md](test/README.md) for more information.
+The intended final setup uses a radio receiver to receive control inputs from the controller as PWM signals and feeds outputs to ESCs for each motor. 
 
-The GitHub action will automatically build the ASIC files using [LibreLane](https://www.zerotoasiccourse.com/terminology/librelane/).
+## External hardware
 
-## Enable GitHub actions to build the results page
+The full system implementation requires a receiver (or other control source) to feed the input control signals, ESCs to receive the output signals, and motors. Many modern transmitters/receivers use protocols other than PWM. I used an ELRS/CRSF RadioMaster transmitter/receiver and a CRSF to PWM converter.
 
-- [Enabling GitHub Pages](https://tinytapeout.com/faq/#my-github-action-is-failing-on-the-pages-part)
-
-## Resources
-
-- [FAQ](https://tinytapeout.com/faq/)
-- [Digital design lessons](https://tinytapeout.com/digital_design/)
-- [Learn how semiconductors work](https://tinytapeout.com/siliwiz/)
-- [Join the community](https://tinytapeout.com/discord)
-- [Build your design locally](https://www.tinytapeout.com/guides/local-hardening/)
-
-## What next?
-
-- [Submit your design to the next shuttle](https://app.tinytapeout.com/).
-- Edit [this README](README.md) and explain your design, how it works, and how to test it.
-- Share your project on your social network of choice:
-  - LinkedIn [#tinytapeout](https://www.linkedin.com/search/results/content/?keywords=%23tinytapeout) [@TinyTapeout](https://www.linkedin.com/company/100708654/)
-  - Mastodon [#tinytapeout](https://chaos.social/tags/tinytapeout) [@matthewvenn](https://chaos.social/@matthewvenn)
-  - X (formerly Twitter) [#tinytapeout](https://twitter.com/hashtag/tinytapeout) [@tinytapeout](https://twitter.com/tinytapeout)
-  - Bluesky [@tinytapeout.com](https://bsky.app/profile/tinytapeout.com)
+My parts list:
+- [RadioMaster 2.4GHz RP1 ELRS FPV Receiver](https://a.co/d/08Twm46a)
+- [MATEKSYS CRSF to PWM Converter](https://a.co/d/050DNA6P)
+- [ESC Brushless Electronic Speed Controller BLHeli_S](https://a.co/d/0iq4EvQL)
+- [Readytosky RS2205 2300KV Brushless Motors](https://a.co/d/0a6xWqX8)
+- [3S1P XT60 LiPo Battery](https://a.co/d/00Ppfwxj)
+- [7inch 3-blade props](https://a.co/d/042gyd2x)
+- [7inch Drone Frame](https://a.co/d/02RikBCN)
+- [Power Distribution Board](https://a.co/d/0cuCnq9I)
+- [Transmitter](https://a.co/d/0jgcRSK5)
