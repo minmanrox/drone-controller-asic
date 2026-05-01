@@ -6,47 +6,12 @@ from cocotb.clock import Clock
 from cocotb.triggers import ClockCycles, RisingEdge, FallingEdge, Timer, Lock
 from cocotb.utils import get_sim_time
 
-CLK_PERIOD_NS = 40  # 25 MHz
-PERIOD_CYCLES = 500_000  # 20 ms @ 25 MHz
-CALIB_CYCLES = 500_000 # UPDATE in system_params.vh - set lower to improve sim time
-HIGH_CYCLES_MAX = 50_000
+CLK_PERIOD_NS = 640  # 3.125MHz
+PERIOD_CYCLES = 31_250  # 20 ms @ 3.125MHz
+HIGH_CYCLES_MAX = 3_125
 LOW_CYCLES_MAX  = PERIOD_CYCLES - HIGH_CYCLES_MAX
-HIGH_CYCLES_MIN = 25_000
+HIGH_CYCLES_MIN = 1_563
 LOW_CYCLES_MIN  = PERIOD_CYCLES - HIGH_CYCLES_MIN
-
-
-@cocotb.test(skip=True)
-async def test_project(dut):
-    dut._log.info("Start")
-
-    # Set the clock period to 10 us (100 KHz)
-    clock = Clock(dut.clk, 10, unit="us")
-    cocotb.start_soon(clock.start())
-
-    # Reset
-    dut._log.info("Reset")
-    dut.ena.value = 1
-    dut.ui_in.value = 0
-    dut.uio_in.value = 0
-    dut.rst_n.value = 0
-    await ClockCycles(dut.clk, 10)
-    dut.rst_n.value = 1
-
-    dut._log.info("Test project behavior")
-
-    # Set the input values you want to test
-    dut.ui_in.value = 20
-    dut.uio_in.value = 30
-
-    # Wait for one clock cycle to see the output values
-    await ClockCycles(dut.clk, 1)
-
-    # The following assersion is just an example of how to check the output values.
-    # Change it to match the actual expected output of your module:
-    assert dut.uo_out.value == 50
-
-    # Keep testing the module by changing the input values, waiting for
-    # one or more clock cycles, and asserting the expected output values.
 
 
 ######################
@@ -57,9 +22,9 @@ async def test_project(dut):
 async def setup_dut(dut):
     dut.ena.value = 1
     dut.rst_n.value = 0
-    await ClockCycles(dut.clk, 10)
+    await ClockCycles(dut.clk, 100)
     dut.rst_n.value = 1
-    await ClockCycles(dut.clk, 10)
+    await ClockCycles(dut.clk, 100)
 
 
 async def measure_pwm_duty(dut, cycles: int) -> dict[int, float]:
@@ -123,10 +88,10 @@ async def drive_pwm_bit(clk, vec_handle, bit_idx, high_cycles, low_cycles, perio
             await RisingEdge(clk)
 
 
-def build_ui_in_value(pwm1, pwm2, pwm3, pwm4, arm, calib_reset_button=0):
+def build_ui_in_value(pwm1, pwm2, pwm3, pwm4, arm):
     return (
         "0"                           # ui_in[7]
-        f"{int(calib_reset_button)}"  # ui_in[6]
+        "0"                           # ui_in[6]
         f"{int(arm)}"                 # ui_in[5]
         f"{int(pwm4)}"                # ui_in[4]
         f"{int(pwm3)}"                # ui_in[3]
@@ -136,7 +101,7 @@ def build_ui_in_value(pwm1, pwm2, pwm3, pwm4, arm, calib_reset_button=0):
     )
 
 
-async def drive_multiple_pwms(clk, vec_handle, pwm_cfgs, periods, calib_reset_button=0):
+async def drive_multiple_pwms(clk, vec_handle, pwm_cfgs, periods):
     """
     pwm_cfgs:
         dict {bit_idx: (high_cycles, low_cycles)}
@@ -162,7 +127,6 @@ async def drive_multiple_pwms(clk, vec_handle, pwm_cfgs, periods, calib_reset_bu
             pwm3=bit_values.get(3, 0),
             pwm4=bit_values.get(4, 0),
             arm=bit_values.get(5, 0),
-            calib_reset_button=calib_reset_button,
         )
 
         await RisingEdge(clk)
@@ -175,15 +139,14 @@ def set_input_values(
     pwm_in3=0,
     pwm_in4=0,
     arm_in=0,
-    calib_reset_button=0,
 ):
-    for sig in [pwm_in1, pwm_in2, pwm_in3, pwm_in4, arm_in, calib_reset_button]:
+    for sig in [pwm_in1, pwm_in2, pwm_in3, pwm_in4, arm_in]:
         if sig != 0 and sig != 1:
             assert False, "set_input_values() args must be 1 or 0"
 
     bitstring = (
         "0"                           # ui_in[7]
-        f"{int(calib_reset_button)}"  # ui_in[6]
+        "0"                           # ui_in[6]
         f"{int(arm_in)}"              # ui_in[5]
         f"{int(pwm_in4)}"             # ui_in[4]
         f"{int(pwm_in3)}"             # ui_in[3]
@@ -193,6 +156,7 @@ def set_input_values(
     )
 
     dut.ui_in.value = bitstring
+    dut.uio_in.value = "00000000"
 
 
 async def drive_controls(dut, throttle, pitch, roll, yaw, periods=1):
@@ -253,7 +217,7 @@ async def read_mixer_values(dut):
 ######################
 
 
-@cocotb.test(skip=True)
+@cocotb.test(skip=False)
 async def dummy_smoke_test(dut):
     """Simple smoke test: toggle inputs and run a few cycles."""
     dut._log.info("Starting dummy smoke test")
@@ -282,74 +246,37 @@ async def dummy_smoke_test(dut):
     set_input_values(dut, arm_in=0)
 
     # Run for 100 clock cycles
-    for i in range(100):
+    # for i in range(100):
+    i = 0
+    success = True
+    while True:
         await RisingEdge(dut.clk)
-    dut._log.info(f"Cycle {i}: pwm_out1={int(dut.uo_out.value[0])}")
+        if dut.uo_out.value[0].is_resolvable:
+            dut._log.info(f"Cycle {i}: output: {dut.uo_out.value}")
+            break
+        i += 1
+        # if i > 10*PERIOD_CYCLES:
+        if i > 10000:
+            success = False
+            break
+
+    dut._log.info(dut.ui_in.value)
+    dut._log.info(dut.uo_out.value)
+    dut._log.info(dut.uio_in.value)
+    dut._log.info(dut.uio_out.value)
+    dut._log.info(dut.uio_oe.value)
+    dut._log.info(dut.ena.value)
+    dut._log.info(dut.clk.value)
+    dut._log.info(dut.rst_n.value)
+    # dut._log.info(dut.VPWR.value)
+    # dut._log.info(dut.VGND.value)
+
+    assert success
 
     dut._log.info("Dummy smoke test completed")
 
 
-@cocotb.test(skip=True)
-async def test_calibration_sequence(dut):
-    """Trigger calibration mechanism and confirm output matches expected."""
-    dut._log.warning("ENSURE CALIB_HOLD IN system_params.vh MATCHES CALIB_CYCLES IN test_top.py")
-    dut._log.info("Starting top_module calibration sequence test")
-
-    # Start 25 MHz clock
-    cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, unit="ns").start())
-
-    # Initialize inputs
-    # dut.ui_in.value[5] = 0 # arm
-    # dut.ui_in.value[6] = 0 # calib
-
-    # dut.ui_in.value[1] = 0 # pwm_inX
-    # dut.ui_in.value[2] = 0 # pwm_inX
-    # dut.ui_in.value[3] = 0 # pwm_inX
-    # dut.ui_in.value[4] = 0 # pwm_inX
-    # dut.ui_in.value = "00000000"
-    set_input_values(dut) # default is 0 for all inputs
-
-    await setup_dut(dut)
-
-    # Let reset / initial logic settle
-    await Timer(1, unit="ms")
-
-    # dut.ui_in.value[6] = 1
-    # dut.ui_in.value = "01000000"
-    set_input_values(dut, calib_reset_button=1)
-    await Timer(10, unit="ms")
-    # dut.ui_in.value[6] = 0
-    # dut.ui_in.value = "00000000"
-    set_input_values(dut, calib_reset_button=0)
-    # await Timer(10, unit="ms")
-    await RisingEdge(dut.clk)
-
-    assert(int(dut.uo_out.value[4]) == 0) # calibration_led
-    assert(int(dut.user_project.controller.e1.calibration_state.value) == 0)
-    max_calib_duties = await measure_pwm_duty(dut, CALIB_CYCLES)
-    dut._log.info("Calibration phase 0 duty cycles:")
-    print(max_calib_duties)
-    dut._log.info(f"Finished phase 0 at sim time {get_sim_time(unit='ns')}")
-
-    await Timer(10, unit="ms")
-    assert(int(dut.user_project.controller.e1.calibration_state.value) == 1)
-    min_calib_duties = await measure_pwm_duty(dut, CALIB_CYCLES)
-    dut._log.info("Calibration phase 1 duty cycles:")
-    print(min_calib_duties)
-
-    assert(int(dut.user_project.controller.e1.calibration_state.value) == 2)
-    dut._log.info("Finished calibration phase 1")
-
-    for minDuty in min_calib_duties.keys():
-        for maxDuty in max_calib_duties.keys():
-            assert(min_calib_duties[minDuty] < max_calib_duties[maxDuty])
-
-    assert(bool(dut.uo_out.value[4])) # calibration_led
-
-    dut._log.info("Calibration sequence test completed")
-
-
-@cocotb.test(skip=True)
+@cocotb.test(skip=False)
 async def test_arm_gates_throttle(dut):
     """With throttle max: arm=0 → no PWM out; arm=1 → PWM present."""
     dut._log.info("Starting arm gating test")
@@ -359,7 +286,6 @@ async def test_arm_gates_throttle(dut):
 
     # Initialize inputs
     # dut.ui_in.value[5] = 0 # arm
-    # dut.ui_in.value[6] = 0 # calib
     # dut.ui_in.value[1] = 0 # pwm_inX
     # dut.ui_in.value[2] = 0 # pwm_inX
     # dut.ui_in.value[3] = 0 # pwm_inX
@@ -368,22 +294,16 @@ async def test_arm_gates_throttle(dut):
 
     await setup_dut(dut)
 
-    # Let DUT settle / complete calibration
+    # Let DUT settle
     await Timer(2, unit="ms")
-
-    # Define max and min throttle input PWM
-    high_cycles_max = 50_000
-    low_cycles_max  = PERIOD_CYCLES - high_cycles_max
-    high_cycles_min = 25_000
-    low_cycles_min  = PERIOD_CYCLES - high_cycles_min
 
     # Phase 1: arm=0, drive max throttle, output should remain effectively off
     dut._log.info("Phase 1: arm=0, throttle=max")
 
     # drive throttle and arm (for min) simultaneously
     pwm_cfgs = {
-        1: (high_cycles_max, low_cycles_max), # pwm_in1
-        5: (high_cycles_min, low_cycles_min), # arm
+        1: (HIGH_CYCLES_MAX, LOW_CYCLES_MAX), # pwm_in1
+        5: (HIGH_CYCLES_MIN, LOW_CYCLES_MIN), # arm
     }
     await drive_multiple_pwms(dut.clk, dut.ui_in, pwm_cfgs, 1)
     assert(dut.uo_out.value[5] == 0) # arm_led
@@ -394,15 +314,15 @@ async def test_arm_gates_throttle(dut):
     dut._log.info(f"Disarmed duty pwm_out1={d1_disarmed:.4f}")
 
     # Expect minimum duty (ideally 0.05)
-    assert d1_disarmed <= 0.05, "pwm_out1 should be near 0.05 when arm=0"
+    assert d1_disarmed <= 0.050016, "pwm_out1 should be near 0.05 when arm=0"
 
     # Phase 2: arm=1, same max throttle, now PWM should be present
     dut._log.info("Phase 2: arm=1, throttle=max")
 
     # drive throttle and arm (for max) simultaneously
     pwm_cfgs = {
-        1: (high_cycles_max, low_cycles_max), # pwm_in1
-        5: (high_cycles_max, low_cycles_max), # arm
+        1: (HIGH_CYCLES_MAX, LOW_CYCLES_MAX), # pwm_in1
+        5: (HIGH_CYCLES_MAX, LOW_CYCLES_MAX), # arm
     }
     await drive_multiple_pwms(dut.clk, dut.ui_in, pwm_cfgs, 1)
     assert(dut.uo_out.value[5] == 1) # arm_led
@@ -417,7 +337,7 @@ async def test_arm_gates_throttle(dut):
     dut._log.info("Arm gating test PASSED")
 
 
-@cocotb.test(skip=True)
+@cocotb.test(skip=False)
 async def test_throttle_min_max(dut):
     """Throttle axis only: min and max, all other axes neutral."""
     cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, unit="ns").start())
@@ -444,7 +364,7 @@ async def test_throttle_min_max(dut):
         assert duty > 0.065 and duty < 0.08, f"max_throttle motor {motor} duty out of range at {duty}"
 
 
-@cocotb.test(skip=True)
+@cocotb.test(skip=False)
 async def test_pitch_min_max(dut):
     """Pitch axis only: min and max, all other axes neutral."""
     cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, unit="ns").start())
@@ -477,7 +397,7 @@ async def test_pitch_min_max(dut):
     assert max_duties[1] <  max_duties[4], f"Front motors ({max_duties[1]}) not slower than rear motors ({max_duties[4]})"
 
 
-@cocotb.test(skip=True)
+@cocotb.test(skip=False)
 async def test_roll_min_max(dut):
     """Roll axis only: min and max, all other axes neutral."""
     cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, unit="ns").start())
@@ -510,7 +430,7 @@ async def test_roll_min_max(dut):
     assert max_duties[1] >  max_duties[2], f"Left motors ({max_duties[1]}) not faster than right motors ({max_duties[2]})"
 
 
-@cocotb.test(skip=True)
+@cocotb.test(skip=False)
 async def test_yaw_min_max(dut):
     """Yaw axis only: min and max, all other axes neutral."""
     cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, unit="ns").start())
@@ -543,7 +463,7 @@ async def test_yaw_min_max(dut):
     assert max_duties[1] <  max_duties[2], f"CCW motors ({max_duties[1]}) not slower than CW motors ({max_duties[2]})"
 
 
-@cocotb.test(skip=True)
+@cocotb.test(skip=False)
 async def test_control_extremes(dut):
     """Test extreme control inputs and confirm outputs stay within bounds and match expected behavior"""
     cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, unit="ns").start())
@@ -582,7 +502,7 @@ async def test_control_extremes(dut):
     assert max_duties[4] >  max_duties[1], f"All high - Motor 4 ({max_duties[4]}) not faster than other motors ({max_duties[1]})"
 
 
-@cocotb.test(skip=True)
+@cocotb.test(skip=False)
 async def test_neutral_controls(dut):
     """Used to observe motor levels at neutral controls"""
     cocotb.start_soon(Clock(dut.clk, CLK_PERIOD_NS, unit="ns").start())

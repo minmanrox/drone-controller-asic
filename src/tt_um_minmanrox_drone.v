@@ -19,26 +19,26 @@ module tt_um_minmanrox_drone (
   // All output pins must be assigned. If not used, assign to 0.
   top_module controller (
     .clk(clk),
+    .rst_n(rst_n),
     .pwm_in1(ui_in[1]),
     .pwm_in2(ui_in[2]),
     .pwm_in3(ui_in[3]),
     .pwm_in4(ui_in[4]),
     .arm_in(ui_in[5]),
-    .calib_reset_button(ui_in[6]),
     .pwm_out1(uo_out[0]),
     .pwm_out2(uo_out[1]),
     .pwm_out3(uo_out[2]),
     .pwm_out4(uo_out[3]),
-    .calibration_led(uo_out[4]),
     .arm_led(uo_out[5])
   );
 
+  assign uo_out[4] = 0;
   assign uo_out[6] = 0;
   assign uo_out[7] = 0;
   assign uio_out = 0;
   assign uio_oe  = 0;
 
   // List all unused inputs to prevent warnings
-  wire _unused = &{ena, clk, rst_n, uio_in[7:0], ui_in[0], ui_in[7], 1'b0};
+  wire _unused = &{ena, clk, rst_n, uio_in[7:0], ui_in[0], ui_in[6], ui_in[7], 1'b0};
 
 endmodule
